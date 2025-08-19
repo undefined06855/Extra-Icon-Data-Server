@@ -87,6 +87,7 @@ Bun.serve({
                 let json = IconsGETJSON.parse(await req.json());
 
                 let ret = {};
+                console.log(json.players);
 
                 for (let [player, iconTypes] of Object.entries(json.players)) {
                     let rows = db
@@ -114,7 +115,7 @@ Bun.serve({
 
                 return new Response(JSON.stringify({
                     success: true,
-                    ...ret
+                    players: ret
                 }));
             },
         },
