@@ -33,7 +33,7 @@ const modIDRegex = /^[a-z0-9_\-]+\.[a-z0-9_\-]+$/
 
 const IconsGETJSON = zod.object({
     players: zod.record(
-        zod.number().int(), zod.enum(iconTypes)
+        zod.number().int(), zod.array(zod.enum(iconTypes))
     )
 });
 
@@ -88,29 +88,25 @@ Bun.serve({
 
                 let ret = {};
 
-                for (let [player, iconType] of Object.entries(json.players)) {
+                for (let [player, iconTypes] of Object.entries(json.players)) {
                     let rows = db
                         .query(`SELECT ExtraIconData FROM Players WHERE AccountID = ?`)
                         .all(parseInt(player));
                     
+                    let data = {};
+
                     if (rows.length == 0) {
-                        ret[player] = {};
-                        continue;
+                        // empty data
+                        for (let type of iconTypes) { data[type] = {}; }
+                        delete data.shared;
+                    } else {
+                        data = JSON.parse(rows[0].ExtraIconData);
                     }
 
-                    let data = JSON.parse(rows[0].ExtraIconData);
-                    if (iconType == -1) {
-                        ret[player] = data;
-                        delete ret[player].shared
-                        for (let iconType of Object.keys(data)) {
-                            ret[player][iconType] = {
-                                ...data[iconType],
-                                ...data.shared
-                            }
-                        }
-                    } else {
-                        ret[player] = {
-                            ...data[iconType],
+                    ret[player] = {};
+                    for (let type of iconTypes) {
+                        ret[player][type] = {
+                            ...data[type],
                             ...data.shared
                         };
                     }
