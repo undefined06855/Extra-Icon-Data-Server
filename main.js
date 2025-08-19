@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite"
 import { mkdir } from "node:fs/promises";
-import { randomBytes } from "node:crypto";
+import * as crypto from "node:crypto";
+import * as zod from "zod"
 import Argon from "./argon.js";
 
 await mkdir("storage", { recursive: true });
@@ -23,6 +24,30 @@ process.on("unhandledRejection", error => {
     console.warn(`${error.message}\n\t${error.stack}`);
 });
 
+const TokenGETJSON = zod.object({
+    accountID: zod.number().int(),
+    token: zod.string() // argon token
+});
+
+const iconTypes = [ "cube", "ship", "ball", "ufo", "wave", "robot", "spider", "swing", "jetpack", "shared" ];
+const modIDRegex = /^[a-z0-9_\-]+\.[a-z0-9_\-]+$/
+
+const IconsGETJSON = zod.object({
+    players: zod.record(
+        zod.number().int(), zod.enum(iconTypes)
+    )
+});
+
+const IconsPOSTJSON = zod.object({
+    accountID: zod.number().int(),
+    token: zod.string(),
+    data: zod.record(
+        zod.enum(iconTypes), zod.record(
+            zod.string().regex(modIDRegex), zod.any()
+        )
+    )
+});
+
 Bun.serve({
     routes: {
         "/": Response.redirect("https://undefined0.dev/cat"),
@@ -30,20 +55,14 @@ Bun.serve({
         "/token": {
             "GET": async req => {
                 // generate new token with argon token for account id
-                let json = await req.json();
-
-                // check required keys
-                if (!"accountID" in json || !"token" in json) {
-                    return new Response(`{"success": false}`);
-                }
+                let json = TokenGETJSON.parse(await req.json());
                 
                 let valid = await Argon.validate(json.accountID, json.token);
-
                 if (!valid) {
-                    return new Response(`{"success": false}`);
+                    throw new Error("Argon validation failed!");
                 }
 
-                let token = randomBytes(20).toString("hex");
+                let token = crypto.randomBytes(20).toString("hex");
 
                 db.exec(`
                     INSERT OR REPLACE
@@ -52,31 +71,20 @@ Bun.serve({
                     json.accountID, token
                 );
 
-                return new Response(`{"success": true, "token": "${token}"}`);
-
-            },
-            "POST": async req => {
-                // verify token for account id
+                return new Response(JSON.stringify({ success: true, token }));
             }
         },
 
         "/icons": {
             "GET": async req => {
-                let json = await req.json();
-
-                // check required keys
-                if (!"players" in json) {
-                    return new Response(`{"success": false}`);
-                }
+                let json = IconsGETJSON.parse(await req.json());
 
                 let ret = {};
 
                 for (let [player, iconType] of Object.entries(json.players)) {
-                    player = parseInt(player);
-
                     let rows = db
                         .query(`SELECT ExtraIconData FROM Players WHERE AccountID = ?`)
-                        .all(player);
+                        .all(parseInt(player));
                     
                     if (rows.length == 0) {
                         ret[player] = {};
@@ -101,31 +109,14 @@ Bun.serve({
                     }
                 }
 
-                return new Response(JSON.stringify(ret));
+                return new Response(JSON.stringify({
+                    success: true,
+                    ...ret
+                }));
             },
 
             "POST": async req => {
-                let json = await req.json();
-
-                // check required keys
-                if (!"data" in json || !"accountID" in json || !"token" in json) {
-                    return new Response(`{"success": false}`);
-                }
-
-                let requiredKeys = [
-                    "cube", "ship", "ball", "ufo", "wave", "robot", "spider",
-                    "swing", "jetpack", "shared"
-                ]
-
-                for (let key of requiredKeys) {
-                    if (!key in json.data) {
-                        return new Response(`{"success": false}`);
-                    }
-
-                    if (!typeof key === "object") {
-                        return new Response(`{"success": false}`);
-                    }
-                }
+                let json = IconsPOSTJSON.parse(await req.json());
 
                 // verify token
                 let rows = db
@@ -134,12 +125,12 @@ Bun.serve({
 
                 if (rows.length == 0) {
                     // no token generated for user yet
-                    return new Response(`{"success": false}`);
+                    throw new Error("No token generated for user yet!");
                 }
 
                 let token = rows[0].Token;
                 if (token != json.token) {
-                    return new Response(`{"success": false}`);
+                    throw new Error("Token mismatch!");
                 }
 
                 // and insert
@@ -150,9 +141,14 @@ Bun.serve({
                     parseInt(json.accountID), JSON.stringify(json.data)
                 );
 
-                return new Response(`{"success": true}`);
+                return new Response(JSON.stringify({ success: true }));
             }
         }
+    },
+
+    error: error => {
+        console.warn(error);
+        return new Response(JSON.stringify({ success: false, error }))
     },
 
     port: 2001
