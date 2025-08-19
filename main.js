@@ -51,8 +51,15 @@ Bun.serve({
     routes: {
         "/": Response.redirect("https://undefined0.dev/cat"),
 
-        "/token": {
-            "GET": async req => {
+        // get random "token" page from wikipedia api
+        "/token": async req => {
+            let res = await fetch("https://en.wikipedia.org/w/api.php?action=opensearch&search=token");
+            let json = await res.json();
+
+            return Response.redirect(json[3][~~(Math.random() * json[3].length)]);
+        },
+        "/token/get": {
+            "POST": async req => {
                 // generate new token with argon token for account id
                 let json = TokenGETJSON.parse(await req.json());
                 
@@ -74,8 +81,9 @@ Bun.serve({
             }
         },
 
-        "/icons": {
-            "GET": async req => {
+        "/icons": Response.redirect("https://geode-sdk.org/mods/undefined0.icon_ninja"),
+        "/icons/get": {
+            "POST": async req => {
                 let json = IconsGETJSON.parse(await req.json());
 
                 let ret = {};
@@ -113,7 +121,8 @@ Bun.serve({
                     ...ret
                 }));
             },
-
+        },
+        "/icons/set": {
             "POST": async req => {
                 let json = IconsPOSTJSON.parse(await req.json());
 
