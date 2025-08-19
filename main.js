@@ -10,7 +10,7 @@ const db = new Database("storage/database.sqlite");
 db.exec(`
 CREATE TABLE IF NOT EXISTS Players (
     AccountID       INTEGER PRIMARY KEY,
-    ExtraIconData   TEXT NOT NULL,
+    ExtraIconData   TEXT,
     Token           TEXT NOT NULL
 ) WITHOUT ROWID
 `);
