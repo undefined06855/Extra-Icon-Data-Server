@@ -87,7 +87,6 @@ Bun.serve({
                 let json = IconsGetJSON.parse(await req.json());
 
                 let ret = {};
-                console.log(json.players);
 
                 for (let [player, iconTypes] of Object.entries(json.players)) {
                     let rows = db
