@@ -32,6 +32,7 @@ Bun.serve({
                 // generate new token with argon token for account id
                 let json = await req.json();
 
+                // check required keys
                 if (!"accountID" in json || !"token" in json) {
                     return new Response(`{"success": false}`);
                 }
@@ -63,6 +64,7 @@ Bun.serve({
             "GET": async req => {
                 let json = await req.json();
 
+                // check required keys
                 if (!"players" in json) {
                     return new Response(`{"success": false}`);
                 }
@@ -105,6 +107,7 @@ Bun.serve({
             "POST": async req => {
                 let json = await req.json();
 
+                // check required keys
                 if (!"data" in json || !"accountID" in json || !"token" in json) {
                     return new Response(`{"success": false}`);
                 }
@@ -134,8 +137,12 @@ Bun.serve({
                     return new Response(`{"success": false}`);
                 }
 
-                let token = rows[0];
+                let token = rows[0].Token;
+                if (token != json.token) {
+                    return new Response(`{"success": false}`);
+                }
 
+                // and insert
                 db.exec(`
                     INSERT OR REPLACE 
                     INTO Players (AccountID, ExtraIconData) 
