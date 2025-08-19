@@ -77,6 +77,8 @@ Bun.serve({
                     json.accountID, token
                 );
 
+                console.log("set token for %s: %s", json.accountID, token);
+
                 return new Response(JSON.stringify({ success: true, token }));
             }
         },
@@ -136,6 +138,8 @@ Bun.serve({
                 if (token != json.token) {
                     throw new Error("Token mismatch!");
                 }
+
+                console.log("set icon for %s", json.accountID);
 
                 // and insert
                 db.exec(`
