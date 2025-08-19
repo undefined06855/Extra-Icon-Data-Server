@@ -7,7 +7,6 @@ import Argon from "./argon.js";
 await mkdir("storage", { recursive: true });
 
 const db = new Database("storage/database.sqlite");
-db.exec(`DROP TABLE Players`)
 db.exec(`
 CREATE TABLE IF NOT EXISTS Players (
     AccountID       INTEGER PRIMARY KEY,
