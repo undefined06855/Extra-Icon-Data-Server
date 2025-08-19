@@ -2,7 +2,7 @@
 // by undefined0
 // feel free to use it really doesn't do much
 
-export default Argon = {
+const Argon = {
     baseUrl: "https://argon.globed.dev/v1",
 
     /**
@@ -29,3 +29,5 @@ export default Argon = {
         return true;
     }
 };
+
+export default Argon;
