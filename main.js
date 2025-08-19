@@ -95,7 +95,7 @@ Bun.serve({
                     
                     let data = {};
 
-                    if (rows.length == 0) {
+                    if (rows.length == 0 || rows[0].ExtraIconData === null) {
                         // empty data
                         for (let type of iconTypes) { data[type] = {}; }
                         delete data.shared;
