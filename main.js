@@ -31,13 +31,13 @@ const TokenGETJSON = zod.object({
 const iconTypes = [ "cube", "ship", "ball", "ufo", "wave", "robot", "spider", "swing", "jetpack", "shared" ];
 const modIDRegex = /^[a-z0-9_\-]+\.[a-z0-9_\-]+$/
 
-const IconsGETJSON = zod.object({
+const IconsGetJSON = zod.object({
     players: zod.record(
-        zod.number().int(), zod.array(zod.enum(iconTypes))
+        zod.string().refine(string => !isNaN(parseInt(string)), { error: "String must be a user ID!" }), zod.array(zod.enum(iconTypes))
     )
 });
 
-const IconsPOSTJSON = zod.object({
+const IconsSetJSON = zod.object({
     accountID: zod.number().int(),
     token: zod.string(),
     data: zod.record(
@@ -84,7 +84,7 @@ Bun.serve({
         "/icons": Response.redirect("https://geode-sdk.org/mods/undefined0.icon_ninja"),
         "/icons/get": {
             "POST": async req => {
-                let json = IconsGETJSON.parse(await req.json());
+                let json = IconsGetJSON.parse(await req.json());
 
                 let ret = {};
                 console.log(json.players);
@@ -121,7 +121,7 @@ Bun.serve({
         },
         "/icons/set": {
             "POST": async req => {
-                let json = IconsPOSTJSON.parse(await req.json());
+                let json = IconsSetJSON.parse(await req.json());
 
                 // verify token
                 let rows = db
