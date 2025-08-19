@@ -152,7 +152,7 @@ Bun.serve({
 
     error: error => {
         console.warn(error);
-        return new Response(JSON.stringify({ success: false, error }))
+        return new Response(JSON.stringify({ success: false, error: error.message }))
     },
 
     port: 2001
