@@ -77,8 +77,6 @@ Bun.serve({
                     json.accountID, token
                 );
 
-                console.log("set token for %s: %s", json.accountID, token);
-
                 return new Response(JSON.stringify({ success: true, token }));
             }
         },
@@ -139,14 +137,12 @@ Bun.serve({
                     throw new Error("Token mismatch!");
                 }
 
-                console.log("set icon for %s", json.accountID);
-
                 // and insert
                 db.exec(`
-                    INSERT OR REPLACE 
-                    INTO Players (AccountID, ExtraIconData) 
-                    VALUES (?, ?)`,
-                    parseInt(json.accountID), JSON.stringify(json.data)
+                    UPDATE Players
+                    SET ExtraIconData = ?
+                    WHERE AccountID = ?`,
+                    JSON.stringify(json.data), parseInt(json.accountID)
                 );
 
                 return new Response(JSON.stringify({ success: true }));
